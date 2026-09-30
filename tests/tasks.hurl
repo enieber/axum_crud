@@ -9,13 +9,25 @@ POST {{host}}/tasks
 }
 HTTP 201
 
+POST {{host}}/tasks
+{
+    "title": "dar Bom Dia"
+}
+HTTP 201
+
+POST {{host}}/tasks
+{
+    "title": "dar Bom Dia",
+}
+HTTP 201
+
 # update task
-PATCH {{host}}/tasks/1
+PATCH {{host}}/tasks/2
 {
     "title":"Boa tarde"
 }
 HTTP 200
 
 # delete task
-DELETE {{host}}/tasks/4
+DELETE {{host}}/tasks/1
 HTTP 204

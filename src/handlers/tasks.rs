@@ -3,73 +3,101 @@ use axum::{
     http::StatusCode,
     Json,
 };
-
-use crate::models::{CreateTask, Task, UpdateTask};
+use sea_orm::{
+    ActiveModelTrait, EntityTrait, Set,
+};
+use crate::models::task;
+use crate::models::task::{Model, UpdateTask, CreateTask};
 use crate::state::AppState;
 
-pub async fn list(State(state): State<AppState>) ->  Json<Vec<Task>> {
-    let tasks = state.tasks.lock().unwrap();
-    Json(tasks.clone())
+pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Model>>, (StatusCode, String)> {
+    let task_list = task::Entity::find()
+        .all(&state.db)
+        .await
+        .map_err(|err| {
+            tracing::error!("Erro ao buscar tasks no banco: {:?}", err);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Falha ao buscar dados: {}", err),
+            )
+        })?;
+
+    Ok(Json(task_list))
 }
 
-pub async fn create(State(state): State<AppState>, Json(payload): Json<CreateTask>) -> (StatusCode, Json<Task>) {
-    let mut tasks = state.tasks.lock().unwrap();
-    let mut next_id = state.next_id.lock().unwrap();
-
-    let task = Task {
-        id: *next_id,
-        title: payload.title,
-        done: false,
+pub async fn create(State(state): State<AppState>, Json(payload): Json<CreateTask>) -> Result<(StatusCode, Json<Model>), StatusCode> {
+    let task = task::ActiveModel {
+        title: Set(payload.title),
+        done: Set(false),
+        ..Default::default()
     };
 
-    *next_id += 1;
-    tasks.push(task.clone());
-    (StatusCode::CREATED, Json(task.clone()))
+    let task_return = task
+            .insert(&state.db)
+            .await
+            .map_err(|e| {
+                        if e.to_string().contains("duplicate key") || e.to_string().contains("unique constraint") {
+                            StatusCode::CONFLICT
+                        } else {
+                            StatusCode::INTERNAL_SERVER_ERROR
+                        }
+            })?;
+    Ok((StatusCode::CREATED, Json(task_return.into())))
 }
 
-pub async fn get_one(State(state): State<AppState>, Path(id): Path<u32>) -> Result<Json<Task>, StatusCode> {
-    let tasks = state.tasks.lock().unwrap();
+pub async fn get_one(State(state): State<AppState>, Path(id): Path<i32>) -> Result<Json<Model>, StatusCode> {
+    let task = task::Entity::find_by_id(id)
+        .one(&state.db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
 
-    tasks
-        .iter()
-        .find(|t| t.id == id)
-        .map(|t| Json(t.clone()))
-        .ok_or(StatusCode::NOT_FOUND)
+    Ok(Json(task.into()))
 }
 
 
 pub async fn update(
     State(state): State<AppState>,
-    Path(id): Path<u32>,
+    Path(id): Path<i32>,
     Json(payload): Json<UpdateTask>,
-) -> Result<Json<Task>, StatusCode> {
-       let mut tasks = state.tasks.lock().unwrap();
-       let task = tasks
-           .iter_mut()
-           .find(|t| t.id == id)
-           .ok_or(StatusCode::NOT_FOUND)?;
+) -> Result<Json<Model>, StatusCode> {
+        let task = task::Entity::find_by_id(id)
+                    .one(&state.db)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                    .ok_or(StatusCode::NOT_FOUND)?;
+
+        let mut task: task::ActiveModel = task.into();
 
        if let Some(title) = payload.title {
-           task.title = title
+           task.title = Set(title)
        }
 
        if let Some(done) = payload.done {
-           task.done = done
+           task.done = Set(done)
        }
 
-       Ok(Json(task.clone()))
+       let task = task
+                    .update(&state.db)
+                    .await
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+       Ok(Json(task.into()))
 }
 
 
-pub async fn remove(State(state): State<AppState>, Path(id): Path<u32>) -> StatusCode {
-    let mut tasks = state.tasks.lock().unwrap();
-    let before = tasks.len();
+pub async fn remove(State(state): State<AppState>, Path(id): Path<i32>) -> Result<StatusCode, StatusCode> {
+    let task = task::Entity::find_by_id(id)
+                .one(&state.db)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or(StatusCode::NOT_FOUND)?;
 
-    tasks.retain(|t| t.id != id);
+    let task: task::ActiveModel = task.into();
 
-    if tasks.len() < before {
-        StatusCode::NO_CONTENT
-    } else {
-        StatusCode::NOT_FOUND
-    }
+    task.delete(&state.db)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(StatusCode::NO_CONTENT)
 }
