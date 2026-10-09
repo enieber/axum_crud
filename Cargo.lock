@@ -469,6 +469,7 @@ dependencies = [
  "migration",
  "sea-orm",
  "serde",
+ "serde_json",
  "tokio",
  "tower-http",
  "tracing",

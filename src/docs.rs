@@ -1,7 +1,9 @@
 use utoipa::{Modify, OpenApi};
 use utoipa::openapi::security::{ApiKey, ApiKeyValue, SecurityScheme};
-use crate::handlers::tasks; // Ajuste o caminho do seu handler
-use crate::models::task::{Model, CreateTask, UpdateTask}; // Ajuste o caminho
+use crate::handlers::tasks;
+use crate::models::task::{Model, CreateTask, UpdateTask};
+use crate::models::error::{ErrorResponse};
+use crate::models::response::{ApiResponse, Meta};
 
 #[derive(OpenApi)]
 #[openapi(
@@ -13,7 +15,7 @@ use crate::models::task::{Model, CreateTask, UpdateTask}; // Ajuste o caminho
         tasks::remove
     ),
     components(
-        schemas(Model, CreateTask, UpdateTask)
+        schemas(Model, CreateTask, UpdateTask, ErrorResponse, ApiResponse<Vec<Model>>, Meta)
     ),
     tags(
         (name = "Tasks", description = "Task management API")
