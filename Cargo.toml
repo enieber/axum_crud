@@ -8,10 +8,11 @@ axum = { version = "0.8.9", features = ["multipart", "macros"] }
 axum-extra = { version = "0.12.6", features = ["cookie-private"] }
 tokio = { version = "1.53.1", features = ["full"] }
 serde = { version = "1", features = ["derive"]}
-utoipa = "6.0.0"
+utoipa = { version = "6", features = ["axum_extras", "chrono"] }
 sea-orm = { version = "2.0.4", features = [ "sqlx-sqlite", "macros", "runtime-tokio-rustls", "with-chrono"] }
 migration          = { path = "./migration" }
-chrono = "0.4.45"
+chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower-http = { version = "0.7", features = ["trace"] }
+utoipa-swagger-ui = { version = "10.0.1", features = ["axum"] }

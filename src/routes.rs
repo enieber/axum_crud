@@ -5,6 +5,8 @@ use axum::{
 
 use crate::handlers::tasks;
 use crate::state::AppState;
+use utoipa::OpenApi;
+// use crate::docs::OpenApi;
 
 pub fn app(state: AppState) -> Router {
     Router::new()

@@ -2,8 +2,9 @@ use serde::{Deserialize, Serialize};
 use sea_orm::entity::prelude::*;
 use sea_orm::ActiveValue::Set;
 use chrono::Utc;
+use utoipa::ToSchema;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, ToSchema)]
 #[sea_orm(table_name = "tasks")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -11,8 +12,8 @@ pub struct Model {
     pub title: String,
     #[sea_orm(column_type = "Boolean")]
     pub done: bool,
-    pub created_at: DateTimeWithTimeZone,
-    pub updated_at: DateTimeWithTimeZone,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -25,10 +26,10 @@ impl ActiveModelBehavior for ActiveModel {
         C: ConnectionTrait,
     {
         if insert && self.created_at.is_not_set() {
-            self.created_at = Set(Utc::now().into());
+            self.created_at = Set(Utc::now().naive_utc());
         }
 
-        self.updated_at = Set(Utc::now().into());
+        self.updated_at = Set(Utc::now().naive_utc());
 
         Ok(self)
     }
@@ -37,12 +38,12 @@ impl ActiveModelBehavior for ActiveModel {
 }
 
 
-#[derive(Deserialize)]
+#[derive(Deserialize, ToSchema)]
 pub struct CreateTask {
     pub title: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateTask {
     pub title: Option<String>,
     pub done: Option<bool>,

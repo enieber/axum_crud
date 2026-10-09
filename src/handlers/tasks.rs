@@ -10,6 +10,15 @@ use crate::models::task;
 use crate::models::task::{Model, UpdateTask, CreateTask};
 use crate::state::AppState;
 
+#[utoipa::path(
+    get,
+    path = "/tasks",
+    tag = "Tasks",
+    responses(
+        (status = 200, description = "List of tasks", body = [Model]),
+        (status = 500, description = "Internal Server Error")
+    )
+)]
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Model>>, (StatusCode, String)> {
     let task_list = task::Entity::find()
         .all(&state.db)
@@ -25,6 +34,17 @@ pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<Model>>, (St
     Ok(Json(task_list))
 }
 
+#[utoipa::path(
+    post,
+    path = "/tasks",
+    tag = "Tasks",
+    request_body = CreateTask,
+    responses(
+        (status = 201, description = "Task created successfully", body = Model),
+        (status = 409, description = "Conflict (Duplicate key)"),
+        (status = 500, description = "Internal Server Error")
+    )
+)]
 pub async fn create(State(state): State<AppState>, Json(payload): Json<CreateTask>) -> Result<(StatusCode, Json<Model>), StatusCode> {
     let task = task::ActiveModel {
         title: Set(payload.title),
@@ -45,6 +65,19 @@ pub async fn create(State(state): State<AppState>, Json(payload): Json<CreateTas
     Ok((StatusCode::CREATED, Json(task_return.into())))
 }
 
+#[utoipa::path(
+    get,
+    path = "/tasks/{id}",
+    tag = "Tasks",
+    params(
+        ("id" = i32, Path, description = "Task ID")
+    ),
+    responses(
+        (status = 200, description = "Task found", body = Model),
+        (status = 404, description = "Task not found"),
+        (status = 500, description = "Internal Server Error")
+    )
+)]
 pub async fn get_one(State(state): State<AppState>, Path(id): Path<i32>) -> Result<Json<Model>, StatusCode> {
     let task = task::Entity::find_by_id(id)
         .one(&state.db)
@@ -55,7 +88,20 @@ pub async fn get_one(State(state): State<AppState>, Path(id): Path<i32>) -> Resu
     Ok(Json(task.into()))
 }
 
-
+#[utoipa::path(
+    put, // ou patch, dependendo de como você registrou a rota no seu router
+    path = "/tasks/{id}",
+    tag = "Tasks",
+    params(
+        ("id" = i32, Path, description = "Task ID")
+    ),
+    request_body = UpdateTask,
+    responses(
+        (status = 200, description = "Task updated", body = Model),
+        (status = 404, description = "Task not found"),
+        (status = 500, description = "Internal Server Error")
+    )
+)]
 pub async fn update(
     State(state): State<AppState>,
     Path(id): Path<i32>,
@@ -85,7 +131,19 @@ pub async fn update(
        Ok(Json(task.into()))
 }
 
-
+#[utoipa::path(
+    delete,
+    path = "/tasks/{id}",
+    tag = "Tasks",
+    params(
+        ("id" = i32, Path, description = "Task ID")
+    ),
+    responses(
+        (status = 204, description = "Task deleted successfully"),
+        (status = 404, description = "Task not found"),
+        (status = 500, description = "Internal Server Error")
+    )
+)]
 pub async fn remove(State(state): State<AppState>, Path(id): Path<i32>) -> Result<StatusCode, StatusCode> {
     let task = task::Entity::find_by_id(id)
                 .one(&state.db)
