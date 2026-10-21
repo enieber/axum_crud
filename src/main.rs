@@ -9,16 +9,19 @@ use utoipa::{
     Modify, OpenApi,
 };
 use utoipa_swagger_ui::SwaggerUi;
+use dotenvy::dotenv;
 
 mod models;
-mod state;
 mod routes;
-mod handlers;
-mod docs;
+mod controllers;
+mod state;
+
 use crate::state::AppState;
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("error,tower_http=info"));
 
@@ -38,11 +41,7 @@ async fn main() {
         db: conn,
     };
 
-    let app_routes = routes::app(state);
-    let app = app_routes.merge(
-            SwaggerUi::new("/swagger-ui")
-                .url("/api-docs/openapi.json", docs::ApiDoc::openapi()),
-        );
+    let app = routes::app(state).layer(TraceLayer::new_for_http());
 
     let listener = TcpListener::bind
         ("0.0.0.0:3000").await.unwrap();

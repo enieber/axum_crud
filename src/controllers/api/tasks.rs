@@ -12,6 +12,8 @@ use crate::state::AppState;
 use crate::models::error::{ErrorResponse};
 use crate::models::response::{ApiResponse, PaginationParams};
 use sea_orm::PaginatorTrait;
+use utoipa::ToSchema;
+use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[utoipa::path(
     get,
@@ -229,4 +231,14 @@ pub async fn remove(State(state): State<AppState>, Path(id): Path<i32>) -> Resul
             )
             )?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+
+pub fn routes() -> OpenApiRouter<AppState> {
+    OpenApiRouter::new()
+        .routes(routes!(list))
+        .routes(routes!(create))
+        .routes(routes!(get_one))
+        .routes(routes!(update))
+        .routes(routes!(remove))
 }
