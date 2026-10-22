@@ -12,6 +12,25 @@ pub struct PaginationParams {
 fn default_page() -> u64 { 1 }
 fn default_limit() -> u64 { 20 }
 
+
+impl Default for PaginationParams {
+    fn default() -> Self {
+        Self { page: default_page(), limit: default_limit() }
+    }
+}
+
+impl PaginationParams {
+    pub const MIN_LIMIT: u64 = 1;
+    pub const MAX_LIMIT: u64 = 100;
+
+    pub fn page_1based(&self) -> u64 { self.page.max(1) }
+
+    pub fn limit_clamped(&self) -> u64 {
+        self.limit.clamp(Self::MIN_LIMIT, Self::MAX_LIMIT)
+    }
+}
+
+
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ApiResponse<T: ToSchema> {
     pub data: T,
@@ -21,10 +40,10 @@ pub struct ApiResponse<T: ToSchema> {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct Meta {
-    pub total: i64,
-    pub page: i64,
-    pub limit: i64,
-    pub total_pages: i64,
+    pub total: u64,
+    pub page: u64,
+    pub limit: u64,
+    pub total_pages: u64,
 }
 
 impl<T: ToSchema> ApiResponse<T> {
@@ -34,14 +53,14 @@ impl<T: ToSchema> ApiResponse<T> {
     }
 
     /// Resposta com metadados de paginação
-    pub fn paginated(data: T, total: i64, page: i64, limit: i64) -> Self {
+    pub fn paginated(data: T, total: u64, page: u64, limit: u64) -> Self {
         Self {
             data,
             meta: Some(Meta {
                 total,
                 page,
                 limit,
-                total_pages: (total as f64 / limit as f64).ceil() as i64,
+                total_pages:  (total as f64 / limit as f64).ceil() as u64,
             }),
         }
     }
