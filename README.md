@@ -25,7 +25,7 @@ To run tests is use hurl.dev:
 
 ### Front
 
-<img width="1898" height="959" alt="image" src="https://github.com/user-attachments/assets/b3eca22f-5162-4726-bfb7-7c040fd37b25" />
+<img width="1898" height="959" alt="image" src="https://github.com/user-attachments/assets/0bed2f52-5298-4a2b-b6a1-03753609af04" />
 
 
 ## License
