@@ -8,4 +8,5 @@ pub fn web_routes() -> Router<AppState> {
         .route("/tasks/new", get(tasks::new_task_page))
         .route("/tasks/{id}/edit", get(tasks::edit_task_page))
         .route("/tasks/{id}", post(tasks::update_task))
+        .route("/tasks/{id}/delete", post(tasks::delete_task))
 }

@@ -28,7 +28,14 @@
             {{ task.title }}
           </span>
           </div>
-          <a href="/tasks/{{task.id}}/edit" class="button">Edit</a>
+          <div>
+            <a href="/tasks/{{task.id}}/edit" class="button">Edit</a>
+            <form method="post" action="/tasks/{{ task.id }}/delete"
+                    style="display:inline"
+                    onsubmit="return confirm('Excluir esta tarefa?');">
+                <button type="submit" class="danger">Excluir</button>
+            </form>
+          </div>
         </li>
       {% endfor %}
     </ul>

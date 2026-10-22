@@ -253,3 +253,28 @@ fn error_form(msg: String) -> TaskFormTemplate {
         general_error: Some(msg),
     }
 }
+
+pub async fn delete_task(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> Redirect {
+    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
+        Ok(u) => u,
+        Err(e) => {
+            tracing::error!("URL inválida ao deletar task {id}: {e}");
+            return Redirect::to("/tasks");
+        }
+    };
+
+    match state.http.delete(url).send().await {
+        Ok(resp) if resp.status().is_success() => Redirect::to("/tasks"),
+        Ok(resp) => {
+            tracing::warn!("API retornou {} ao deletar task {id}", resp.status());
+            Redirect::to("/tasks")
+        }
+        Err(e) => {
+            tracing::error!("Falha ao deletar task {id}: {e}");
+            Redirect::to("/tasks")
+        }
+    }
+}
