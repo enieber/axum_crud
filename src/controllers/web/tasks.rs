@@ -1,6 +1,6 @@
 use axum::{
-    extract::{Form, State, Query},
-    response::{IntoResponse, Redirect},
+    extract::{Form, State, Query, Path},
+    response::{IntoResponse, Redirect, Response},
 };
 use askama::Template;
 use askama_web::WebTemplate;
@@ -157,4 +157,99 @@ fn render_error(msg: String, title: String) -> axum::response::Response {
         ],
         general_error: Some(msg),
     }.into_response()
+}
+
+#[derive(Deserialize)]
+pub struct UpdateTaskFormInput {
+    pub title: String,
+    #[serde(default)]
+    pub done: Option<String>, // checkbox ausente = None
+}
+
+pub async fn update_task(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+    Form(input): Form<UpdateTaskFormInput>,
+) -> impl IntoResponse {
+    let title = input.title.trim().to_string();
+    let done = input.done.as_deref() == Some("true");
+
+    if title.is_empty() {
+        return edit_error(id, "O título não pode estar vazio.", input.title, done);
+    }
+
+    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
+        Ok(u) => u,
+        Err(e) => return edit_error(id, &format!("URL inválida: {e}"), input.title, done),
+    };
+
+    let payload = serde_json::json!({
+        "title": title,
+        "done": done,
+    });
+
+    match state.http.put(url).json(&payload).send().await {
+        Ok(resp) if resp.status().is_success() => Redirect::to("/tasks").into_response(),
+        Ok(resp) => edit_error(id, &format!("API retornou {}", resp.status()), input.title, done),
+        Err(e) => edit_error(id, &format!("Falha na requisição: {e}"), input.title, done),
+    }
+}
+
+fn edit_error(id: i32, msg: &str, title: String, done: bool) -> Response {
+    TaskFormTemplate {
+        title: "Editar tarefa".into(),
+        action: format!("/tasks/{id}"),
+        submit_label: "Salvar".into(),
+        fields: vec![
+            FormField::text("title", "Título", title).required(),
+            FormField::checkbox("done", "Concluída", done),
+        ],
+        general_error: Some(msg.into()),
+    }.into_response()
+}
+
+
+pub async fn edit_task_page(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> TaskFormTemplate {
+    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
+        Ok(u) => u,
+        Err(e) => return error_form(format!("URL inválida: {e}")),
+    };
+
+    let task = match state.http.get(url).send().await {
+        Ok(resp) if resp.status().is_success() => {
+            match resp
+                .json::<crate::models::response::ApiResponse<crate::models::task::Model>>()
+                .await
+            {
+                Ok(api) => api.data,
+                Err(e) => return error_form(format!("JSON inválido: {e}")),
+            }
+        }
+        Ok(resp) => return error_form(format!("API retornou {}", resp.status())),
+        Err(e) => return error_form(format!("Falha na requisição: {e}")),
+    };
+
+    TaskFormTemplate {
+        title: "Editar tarefa".into(),
+        action: format!("/tasks/{id}"),   // ✅ rota web de update
+        submit_label: "Salvar".into(),
+        fields: vec![
+            FormField::text("title", "Título", task.title).required(),
+            FormField::checkbox("done", "Concluída", task.done),
+        ],
+        general_error: None,
+    }
+}
+
+fn error_form(msg: String) -> TaskFormTemplate {
+    TaskFormTemplate {
+        title: "Editar tarefa".into(),
+        action: "#".into(),
+        submit_label: "Salvar".into(),
+        fields: vec![],
+        general_error: Some(msg),
+    }
 }
