@@ -1,10 +1,7 @@
-use axum::Router;
 use utoipa::{
     openapi::security::{ApiKey, ApiKeyValue, SecurityScheme},
     Modify,
 };
-use utoipa_axum::router::OpenApiRouter;
-use utoipa_swagger_ui::SwaggerUi;
 
 pub struct SecurityAddon;
 
@@ -18,4 +15,3 @@ impl Modify for SecurityAddon {
         }
     }
 }
-

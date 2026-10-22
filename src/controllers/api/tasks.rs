@@ -12,7 +12,6 @@ use crate::state::AppState;
 use crate::models::error::{ErrorResponse};
 use crate::models::response::{ApiResponse, PaginationParams};
 use sea_orm::PaginatorTrait;
-use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 
 #[utoipa::path(

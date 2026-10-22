@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<h1>Tarefas</h1>
+
+  {% if let Some(err) = error %}
+    <p class="error">{{ err }}</p>
+  {% endif %}
+
+  <p class="meta">
+    Total: {{ total }} — página {{ page }} ({{ limit }} por página)
+  </p>
+
+  {% if tasks.is_empty() %}
+    <p>Nenhuma tarefa encontrada.</p>
+  {% else %}
+    <ul class="tasks">
+      {% for task in tasks %}
+        <li>
+          <span class="{% if task.done %}done{% endif %}">
+            {{ task.title }}
+          </span>
+          {% if task.done %}
+            <small>(concluída)</small>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <nav class="pagination">
+    {% if page > 1 %}
+      <a href="?page={{ page - 1 }}&limit={{ limit }}">← Anterior</a>
+    {% else %}
+      <a href="#" aria-disabled="true">← Anterior</a>
+    {% endif %}
+
+    <span>Página {{ page }}</span>
+
+    {% if (page * limit) < total %}
+      <a href="?page={{ page + 1 }}&limit={{ limit }}">Próxima →</a>
+    {% else %}
+      <a href="#" aria-disabled="true">Próxima →</a>
+    {% endif %}
+  </nav>
+{% endblock %}

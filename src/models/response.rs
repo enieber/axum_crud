@@ -12,14 +12,14 @@ pub struct PaginationParams {
 fn default_page() -> u64 { 1 }
 fn default_limit() -> u64 { 20 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct ApiResponse<T: ToSchema> {
     pub data: T,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<Meta>,
 }
 
-#[derive(Serialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct Meta {
     pub total: i64,
     pub page: i64,
