@@ -6,6 +6,7 @@ use tracing_subscriber::EnvFilter;
 use tower_http::trace::TraceLayer;
 use dotenvy::dotenv;
 use reqwest::Url;
+use tower_http::services::ServeDir;
 
 mod models;
 mod routes;
@@ -51,7 +52,7 @@ async fn main() {
         api_base,
     };
 
-    let app = routes::app(state).layer(TraceLayer::new_for_http());
+    let app = routes::app(state).nest_service("/static", ServeDir::new("static")).layer(TraceLayer::new_for_http());
 
     let listener = TcpListener::bind
         ("0.0.0.0:3000").await.unwrap();

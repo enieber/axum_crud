@@ -13,32 +13,28 @@
     Total: {{ total }} — página {{ page }} ({{ limit }} por página)
   </p>
 
-  <a href="/tasks/new">
-  <button>
+  <a href="/tasks/new" class="button">
     Create
-  </button>
   </a>
   {% if tasks.is_empty() %}
     <p>Nenhuma tarefa encontrada.</p>
   {% else %}
-    <ul class="tasks">
+    <ul class="sw-container-list">
       {% for task in tasks %}
-        <li>
-            <div>
-                <input type="checkbox" id="is_done" name="is_done" {% if task.done %}checked{% endif %}  />
-                <label for="is_done">{% if task.done %}
-                  <small>(concluída)</small>
-                {% endif %}</label>
-              </div>
+        <li class="sw-item-list">
+          <div>
+          <input type="checkbox" id="is_done" name="is_done" {% if task.done %}checked{% endif %}  disabled />
           <span class="{% if task.done %}done{% endif %}">
             {{ task.title }}
           </span>
+          </div>
+          <a href="/tasks/{{task.id}}/edit" class="button">Edit</a>
         </li>
       {% endfor %}
     </ul>
   {% endif %}
 
-  <nav class="pagination">
+  <nav class="sw-pagination">
     {% if page > 1 %}
       <a href="?page={{ page - 1 }}&limit={{ limit }}">← Anterior</a>
     {% else %}
@@ -52,5 +48,14 @@
     {% else %}
       <a href="#" aria-disabled="true">Próxima →</a>
     {% endif %}
+    <form method="get" action="/tasks">
+        <input type="hidden" name="page" value="{{ page }}">
+        <label for="limit">Itens por página:</label>
+        <select id="limit" name="limit" onchange="this.form.submit()">
+            {% for n in [5, 10, 20, 50] %}
+            <option value="{{ n }}" {% if *n == limit %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+    </form>
   </nav>
 {% endblock %}

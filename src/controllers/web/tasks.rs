@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Form, State},
+    extract::{Form, State, Query},
     response::{IntoResponse, Redirect},
 };
 use askama::Template;
@@ -10,25 +10,28 @@ use crate::state::AppState;
 use axum_crud::views::form::{FormField, FieldKind};
 
 use crate::models::task::{Model};
-use crate::models::response::{ApiResponse};
+use crate::models::response::{ApiResponse, PaginationParams};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "tasks.html")]
 pub struct TaskTemplate {
     pub tasks: Vec<Model>,
-      pub page: i64,
-      pub limit: i64,
-      pub total: i64,
+      pub page: u64,
+      pub limit: u64,
+      pub total: u64,
       pub error: Option<String>,
 }
 
-pub async fn tasks_page(State(state): State<AppState>) -> TaskTemplate {
+pub async fn tasks_page(State(state): State<AppState>, Query(params): Query<PaginationParams>) -> TaskTemplate {
+    let page = params.page;
+    let limit = params.limit_clamped();
+
     let url = match state.api_base.join("/api/v1/tasks") {
         Ok(u) => u,
         Err(e) => return TaskTemplate {
             tasks: vec![],
-            page: 1,
-            limit: 20,
+            page,
+            limit,
             total: 0,
             error: Some(format!("URL inválida: {e}")),
         },
@@ -38,23 +41,24 @@ pub async fn tasks_page(State(state): State<AppState>) -> TaskTemplate {
     let result = state
            .http
            .get(url)
-           .query(&[("page", "1"), ("limit", "20")])
+           .query(&[("page", page), ("limit", limit)])
            .send()
            .await;
+
     match result {
         Ok(resp) if resp.status().is_success() => {
             match resp.json::<ApiResponse<Vec<Model>>>().await {
                 Ok(api) => TaskTemplate {
                     tasks: api.data,
-                    page: 1,
-                    limit: 20,
+                    page,
+                    limit,
                     total: api.meta.unwrap().total,
                     error: None,
                 },
                 Err(e) => TaskTemplate {
                     tasks: vec![],
-                    page: 1,
-                    limit: 20,
+                    page,
+                    limit,
                     total: 0,
                     error: Some(format!("JSON inválido: {e}")),
                 },
@@ -62,15 +66,15 @@ pub async fn tasks_page(State(state): State<AppState>) -> TaskTemplate {
         }
         Ok(resp) => TaskTemplate {
             tasks: vec![],
-            page: 1,
-            limit: 20,
+            page,
+            limit,
             total: 0,
             error: Some(format!("API retornou {}", resp.status())),
         },
         Err(e) => TaskTemplate {
             tasks: vec![],
-            page: 1,
-            limit: 20,
+            page,
+            limit,
             total: 0,
             error: Some(format!("Falha na requisição: {e}")),
         },
@@ -86,7 +90,6 @@ pub struct TaskFormTemplate {
     pub fields: Vec<FormField>,
     pub general_error: Option<String>,
 }
-
 
 pub async fn new_task_page() -> TaskFormTemplate {
     TaskFormTemplate {

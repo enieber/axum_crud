@@ -9,7 +9,6 @@ pub struct ErrorResponse {
     pub details: Option<serde_json::Value>, // Opcional: para validações detalhadas
 }
 
-
 impl ErrorResponse {
     pub fn not_found(resource: &str, id: impl std::fmt::Display) -> Self {
         Self {

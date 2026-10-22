@@ -20,7 +20,7 @@ use utoipa_axum::{router::OpenApiRouter, routes};
     tag = "Tasks",
     params(
             ("page" = u64, Query, description = "Número da página (padrão: 1)"),
-            ("limit" = u64, Query, description = "Itens por página (padrão: 20)")
+            ("limit" = u64, Query, description = "Itens por página (padrão: 10)")
         ),
         responses(
             (status = 200, description = "Lista de tarefas paginada", body = ApiResponse<Vec<Model>>),
@@ -56,9 +56,9 @@ pub async fn list(
 
     Ok(Json(ApiResponse::paginated(
         tasks,
-        total as i64,
-        params.page as i64,
-        params.limit as i64,
+        total,
+        params.page,
+        params.limit,
     )))
 
 }
