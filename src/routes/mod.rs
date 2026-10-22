@@ -16,7 +16,7 @@ use crate::routes::security_addons::SecurityAddon;
 
 pub fn app(state: AppState) -> Router {
     let (router, mut api) = OpenApiRouter::new()
-        .nest("/api/v1/auth", tasks::routes())
+        .nest("/api/v1", tasks::routes())
         .with_state(state.clone())
         .split_for_parts();
 

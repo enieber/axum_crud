@@ -13,18 +13,26 @@
     Total: {{ total }} — página {{ page }} ({{ limit }} por página)
   </p>
 
+  <a href="/tasks/new">
+  <button>
+    Create
+  </button>
+  </a>
   {% if tasks.is_empty() %}
     <p>Nenhuma tarefa encontrada.</p>
   {% else %}
     <ul class="tasks">
       {% for task in tasks %}
         <li>
+            <div>
+                <input type="checkbox" id="is_done" name="is_done" {% if task.done %}checked{% endif %}  />
+                <label for="is_done">{% if task.done %}
+                  <small>(concluída)</small>
+                {% endif %}</label>
+              </div>
           <span class="{% if task.done %}done{% endif %}">
             {{ task.title }}
           </span>
-          {% if task.done %}
-            <small>(concluída)</small>
-          {% endif %}
         </li>
       {% endfor %}
     </ul>
