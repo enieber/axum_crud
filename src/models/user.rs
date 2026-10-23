@@ -1,8 +1,12 @@
 use serde::{Deserialize, Serialize};
 use sea_orm::entity::prelude::*;
-use sea_orm::ActiveValue::Set;
 use chrono::Utc;
 use utoipa::ToSchema;
+use sea_orm::{
+    ActiveModelTrait, Set,
+};
+
+use crate::models::validation::ValidationErrors;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, ToSchema)]
 #[sea_orm(table_name="users")]
@@ -12,7 +16,7 @@ pub struct Model {
     pub name: String,
     pub email: String,
     pub password: String,
-    pub reset_password_token: String,
+    pub reset_password_token: Option<String>,
     pub reset_password_send_at: Option<DateTime>,
     pub remember_created_at: Option<DateTime>,
     pub created_at: DateTime,
@@ -34,14 +38,75 @@ impl ActiveModelBehavior for ActiveModel {
 
         self.updated_at = Set(Utc::now().naive_utc());
 
+        if let Set(name) = &self.name {
+                   if name.trim().is_empty() {
+                       return Err(DbErr::Custom("VALIDATION:name:não pode estar vazio".into()));
+                   }
+               }
+
+               if let Set(email) = &self.email {
+                   let e = email.trim();
+                   if e.is_empty() {
+                       return Err(DbErr::Custom("VALIDATION:email:não pode estar vazio".into()));
+                   }
+                   if !e.contains('@') {
+                       return Err(DbErr::Custom("VALIDATION:email:formato inválido".into()));
+                   }
+               }
         Ok(self)
     }
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]
 pub struct CreateUser {
+    pub name: String,
     pub email: String,
-    pub password: String, 
+    pub password: String,
+}
+
+impl CreateUser {
+    pub fn validate(&self) -> Result<(), ValidationErrors> {
+        let mut errors = ValidationErrors::new();
+
+        let name = self.name.trim();
+        if name.is_empty() {
+            errors.push("name", "não pode estar vazio");
+        } else if name.chars().count() > 100 {
+            errors.push("name", "máximo de 100 caracteres");
+        }
+
+        let email = self.email.trim();
+        if email.is_empty() {
+            errors.push("email", "não pode estar vazio");
+        } else if !email.contains('@') {
+            errors.push("email", "formato inválido");
+        }
+
+        if self.password.chars().count() < 8 {
+            errors.push("password", "mínimo de 8 caracteres");
+        }
+
+        if errors.is_empty() { Ok(()) } else { Err(errors) }
+    }
+}
+
+#[derive(Deserialize, Serialize, ToSchema)]
+pub struct ResponseCreatedUser {
+    pub name: String,
+    pub email: String,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
+}
+
+impl ResponseCreatedUser {
+    pub fn from_user(user: Model) -> Self {
+        Self {
+            name: user.name,
+            email: user.email,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        }
+    }
 }
 
 #[derive(Deserialize, Serialize, ToSchema)]

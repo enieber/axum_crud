@@ -23,3 +23,4 @@ askama = "0.16.1"
 askama_web = { version = "0.16.0", features = ["axum-0.8"] }
 reqwest = { version = "0.13.5", features = ["query", "json"] }
 anyhow = "1.0.104"
+crypto-glue = "0.2.2"

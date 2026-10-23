@@ -3,6 +3,7 @@ use serde::Serialize;
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum FieldKind {
     Text,
+    Password,
     Textarea,
     Checkbox,
     Number,
@@ -14,13 +15,24 @@ pub struct FormField {
     pub label: String,
     pub value: String,
     pub kind: FieldKind,
-    // pub kind: &'static str,   // "text" | "textarea" | "checkbox" | "number"
     pub required: bool,
     pub placeholder: Option<String>,
     pub error: Option<String>,
 }
 
 impl FormField {
+    pub fn password(name: &str, label: &str, value: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            label: label.into(),
+            value: value.into(),
+            kind: FieldKind::Password,
+            required: false,
+            placeholder: None,
+            error: None,
+        }
+    }
+
     pub fn text(name: &str, label: &str, value: impl Into<String>) -> Self {
         Self {
             name: name.into(),

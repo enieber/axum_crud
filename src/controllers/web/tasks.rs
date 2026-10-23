@@ -11,6 +11,7 @@ use axum_crud::views::form::{FormField, FieldKind};
 
 use crate::models::task::{Model};
 use crate::models::response::{ApiResponse, PaginationParams};
+use crate::controllers::web::form::FormTemplate;
 
 #[derive(Template, WebTemplate)]
 #[template(path = "tasks.html")]
@@ -81,18 +82,8 @@ pub async fn tasks_page(State(state): State<AppState>, Query(params): Query<Pagi
     }
 }
 
-#[derive(Template, WebTemplate)]
-#[template(path = "task_form.html")]
-pub struct TaskFormTemplate {
-    pub title: String,
-    pub action: String,
-    pub submit_label: String,
-    pub fields: Vec<FormField>,
-    pub general_error: Option<String>,
-}
-
-pub async fn new_task_page() -> TaskFormTemplate {
-    TaskFormTemplate {
+pub async fn new_task_page() -> FormTemplate {
+    FormTemplate {
         title: "Nova tarefa".into(),
         action: "/tasks".into(),
         submit_label: "Criar".into(),
@@ -117,7 +108,7 @@ pub async fn create_task(
 ) -> impl IntoResponse {
     let title = input.title.trim().to_string();
     if title.is_empty() {
-        return TaskFormTemplate {
+        return FormTemplate {
             title: "Nova tarefa".into(),
             action: "/tasks".into(),
             submit_label: "Criar".into(),
@@ -148,7 +139,7 @@ pub async fn create_task(
 }
 
 fn render_error(msg: String, title: String) -> axum::response::Response {
-    TaskFormTemplate {
+    FormTemplate {
         title: "Nova tarefa".into(),
         action: "/tasks".into(),
         submit_label: "Criar".into(),
@@ -196,7 +187,7 @@ pub async fn update_task(
 }
 
 fn edit_error(id: i32, msg: &str, title: String, done: bool) -> Response {
-    TaskFormTemplate {
+    FormTemplate {
         title: "Editar tarefa".into(),
         action: format!("/tasks/{id}"),
         submit_label: "Salvar".into(),
@@ -212,7 +203,7 @@ fn edit_error(id: i32, msg: &str, title: String, done: bool) -> Response {
 pub async fn edit_task_page(
     State(state): State<AppState>,
     Path(id): Path<i32>,
-) -> TaskFormTemplate {
+) -> FormTemplate {
     let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
         Ok(u) => u,
         Err(e) => return error_form(format!("URL inválida: {e}")),
@@ -232,7 +223,7 @@ pub async fn edit_task_page(
         Err(e) => return error_form(format!("Falha na requisição: {e}")),
     };
 
-    TaskFormTemplate {
+    FormTemplate {
         title: "Editar tarefa".into(),
         action: format!("/tasks/{id}"),   // ✅ rota web de update
         submit_label: "Salvar".into(),
@@ -244,8 +235,8 @@ pub async fn edit_task_page(
     }
 }
 
-fn error_form(msg: String) -> TaskFormTemplate {
-    TaskFormTemplate {
+fn error_form(msg: String) -> FormTemplate {
+    FormTemplate {
         title: "Editar tarefa".into(),
         action: "#".into(),
         submit_label: "Salvar".into(),

@@ -12,6 +12,13 @@
   {% for field in fields %}
     <div class="field{% if field.kind == FieldKind::Checkbox %} checkbox{% endif %}">
       {% match field.kind %}
+        {% when FieldKind::Password %}
+        <label for="{{ field.name }}">{{ field.label }}</label>
+        <input type="password"
+               id="{{ field.name }}"
+               name="{{ field.name }}"
+               {% if field.required %}required{% endif %}
+               {% if let Some(p) = field.placeholder %}placeholder="{{ p }}"{% endif %}>
         {% when FieldKind::Text %}
           <label for="{{ field.name }}">{{ field.label }}</label>
           <input type="text"

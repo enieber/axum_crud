@@ -13,6 +13,7 @@ mod routes;
 mod controllers;
 mod state;
 mod client;
+mod services;
 
 use crate::client::config::Config;
 use crate::client::http::build_client;
