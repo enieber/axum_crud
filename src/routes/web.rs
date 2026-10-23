@@ -4,16 +4,16 @@ use crate::controllers::web::{tasks, auth};
 
 pub fn web_routes() -> Router<AppState> {
     let tasks_routes = Router::new()
-        .route("/", get(tasks::tasks_page).post(tasks::create_task))
-        .route("/new", get(tasks::new_task_page))
-        .route("/{id}/edit", get(tasks::edit_task_page))
-        .route("/{id}", post(tasks::update_task))
-        .route("/{id}/delete", post(tasks::delete_task));
+        .route("/", get(tasks::list_view).post(tasks::register_form))
+        .route("/new", get(tasks::create_view))
+        .route("/{id}/edit", get(tasks::update_view))
+        .route("/{id}", post(tasks::update_form))
+        .route("/{id}/delete", post(tasks::delete_form));
 
     let auth_routes = Router::new()
         .route(
             "/register",
-            get(auth::register_page).post(auth::create_user),
+            get(auth::register_view).post(auth::register_form),
         );
 
     Router::new()

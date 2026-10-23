@@ -10,21 +10,18 @@ use crate::state::AppState;
 use axum_crud::views::form::{FormField, FieldKind};
 use crate::controllers::web::form::FormTemplate;
 
-pub async fn register_page() -> FormTemplate {
+pub async fn register_view() -> FormTemplate {
     FormTemplate {
         title: "Register".into(),
         action: "/auth/register".into(),
         submit_label: "Register".into(),
         fields: vec![
             FormField::text("name", "Nome", "")
-                .required()
-                .error("O Nome não pode estar vazio."),
+                .required(),
             FormField::text("email", "Email", "")
-                .required()
-                .error("O Email não pode estar vazio."),
+                .required(),
             FormField::password("password", "Password", "")
-                .required()
-                .error("O Password não pode estar vazio."),
+                .required(),
         ],
         general_error: None,
     }
@@ -37,7 +34,7 @@ pub struct UserFormInput {
     pub password: String,
 }
 
-pub async fn create_user(
+pub async fn register_form(
     State(state): State<AppState>,
     Form(input): Form<UserFormInput>,
 ) -> impl IntoResponse {

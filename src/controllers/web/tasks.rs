@@ -17,13 +17,13 @@ use crate::controllers::web::form::FormTemplate;
 #[template(path = "tasks.html")]
 pub struct TaskTemplate {
     pub tasks: Vec<Model>,
-      pub page: u64,
-      pub limit: u64,
-      pub total: u64,
-      pub error: Option<String>,
+    pub page: u64,
+    pub limit: u64,
+    pub total: u64,
+    pub error: Option<String>,
 }
 
-pub async fn tasks_page(State(state): State<AppState>, Query(params): Query<PaginationParams>) -> TaskTemplate {
+pub async fn list_view(State(state): State<AppState>, Query(params): Query<PaginationParams>) -> TaskTemplate {
     let page = params.page;
     let limit = params.limit_clamped();
 
@@ -82,7 +82,7 @@ pub async fn tasks_page(State(state): State<AppState>, Query(params): Query<Pagi
     }
 }
 
-pub async fn new_task_page() -> FormTemplate {
+pub async fn create_view() -> FormTemplate {
     FormTemplate {
         title: "Nova tarefa".into(),
         action: "/tasks".into(),
@@ -102,7 +102,7 @@ pub struct TaskFormInput {
     pub title: String,
 }
 
-pub async fn create_task(
+pub async fn register_form(
     State(state): State<AppState>,
     Form(input): Form<TaskFormInput>,
 ) -> impl IntoResponse {
@@ -157,7 +157,7 @@ pub struct UpdateTaskFormInput {
     pub done: Option<String>, // checkbox ausente = None
 }
 
-pub async fn update_task(
+pub async fn update_form(
     State(state): State<AppState>,
     Path(id): Path<i32>,
     Form(input): Form<UpdateTaskFormInput>,
@@ -200,7 +200,7 @@ fn edit_error(id: i32, msg: &str, title: String, done: bool) -> Response {
 }
 
 
-pub async fn edit_task_page(
+pub async fn update_view(
     State(state): State<AppState>,
     Path(id): Path<i32>,
 ) -> FormTemplate {
@@ -225,7 +225,7 @@ pub async fn edit_task_page(
 
     FormTemplate {
         title: "Editar tarefa".into(),
-        action: format!("/tasks/{id}"),   // ✅ rota web de update
+        action: format!("/tasks/{id}"),
         submit_label: "Salvar".into(),
         fields: vec![
             FormField::text("title", "Título", task.title).required(),
@@ -245,7 +245,7 @@ fn error_form(msg: String) -> FormTemplate {
     }
 }
 
-pub async fn delete_task(
+pub async fn delete_form(
     State(state): State<AppState>,
     Path(id): Path<i32>,
 ) -> Redirect {
