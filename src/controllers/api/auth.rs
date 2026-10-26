@@ -1,18 +1,12 @@
-use axum::{
-    extract::{State},
-    http::StatusCode,
-    Json,
-};
+use axum::{Json, extract::State, http::StatusCode};
+use sea_orm::{ActiveModelTrait, Set};
 use utoipa_axum::{router::OpenApiRouter, routes};
-use sea_orm::{
-    ActiveModelTrait, Set,
-};
 
 use crate::models::user;
 use crate::models::user::{CreateUser, ResponseCreatedUser};
-use crate::state::AppState;
 use crate::models::validation::{ErrorValidation, ValidationErrors};
 use crate::services::auth::hash_password;
+use crate::state::AppState;
 
 #[utoipa::path(
     post,
@@ -27,9 +21,8 @@ use crate::services::auth::hash_password;
 )]
 pub async fn create(
     State(state): State<AppState>,
-    Json(payload): Json<CreateUser>
+    Json(payload): Json<CreateUser>,
 ) -> Result<(StatusCode, Json<ResponseCreatedUser>), (StatusCode, Json<ErrorValidation>)> {
-
     if let Err(errors) = payload.validate() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -41,17 +34,19 @@ pub async fn create(
         ));
     }
 
-    let password = hash_password(&payload.password).map_err(|e| {
-        tracing::error!("Falha ao hashear senha: {:?}", e);
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorValidation {
-                error: "INTERNAL_ERROR".into(),
-                message: "Erro ao processar senha".into(),
-                details: None,
-            }),
-        )
-    }).unwrap();
+    let password = hash_password(&payload.password)
+        .map_err(|e| {
+            tracing::error!("Falha ao hashear senha: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorValidation {
+                    error: "INTERNAL_ERROR".into(),
+                    message: "Erro ao processar senha".into(),
+                    details: None,
+                }),
+            )
+        })
+        .unwrap();
 
     let user = user::ActiveModel {
         name: Set(payload.name),
@@ -118,6 +113,5 @@ pub async fn create(
 }
 
 pub fn routes() -> OpenApiRouter<AppState> {
-    OpenApiRouter::new()
-        .routes(routes!(create))
+    OpenApiRouter::new().routes(routes!(create))
 }

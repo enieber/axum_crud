@@ -24,3 +24,8 @@ askama_web = { version = "0.16.0", features = ["axum-0.8"] }
 reqwest = { version = "0.13.5", features = ["query", "json"] }
 anyhow = "1.0.104"
 crypto-glue = "0.2.2"
+
+[package.metadata.sonar]
+project-key = "axum_crud" # Chave única do projeto no SonarQube
+host-url = "http://localhost:9000" # Endereço do seu SonarQube
+

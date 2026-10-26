@@ -23,8 +23,8 @@
       {% for task in tasks %}
         <li class="sw-item-list">
           <div>
-          <input type="checkbox" id="is_done" name="is_done" {% if task.done %}checked{% endif %}  disabled />
-          <span class="{% if task.done %}done{% endif %}">
+          <input type="checkbox" id="is_done-{{task.id}}" name="is_done" {% if task.done %}checked{% endif %}  disabled />
+          <label id="is_done-{{task.id}}" class="{% if task.done %}done{% endif %}">
             {{ task.title }}
           </span>
           </div>

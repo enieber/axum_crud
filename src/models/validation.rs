@@ -26,12 +26,16 @@ impl ValidationErrors {
         self.0.is_empty()
     }
 
-    /// Converte para o JSON que vai no `details` do ErrorResponse.
     pub fn to_details(&self) -> serde_json::Value {
         let map: serde_json::Map<String, serde_json::Value> = self
             .0
             .iter()
-            .map(|e| (e.field.clone(), serde_json::Value::String(e.message.clone())))
+            .map(|e| {
+                (
+                    e.field.clone(),
+                    serde_json::Value::String(e.message.clone()),
+                )
+            })
             .collect();
         serde_json::Value::Object(map)
     }
@@ -42,7 +46,6 @@ impl Default for ValidationErrors {
         Self::new()
     }
 }
-
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ErrorValidation {

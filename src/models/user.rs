@@ -1,15 +1,13 @@
-use serde::{Deserialize, Serialize};
-use sea_orm::entity::prelude::*;
 use chrono::Utc;
+use sea_orm::Set;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use sea_orm::{
-    ActiveModelTrait, Set,
-};
 
 use crate::models::validation::ValidationErrors;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, ToSchema)]
-#[sea_orm(table_name="users")]
+#[sea_orm(table_name = "users")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
@@ -39,20 +37,22 @@ impl ActiveModelBehavior for ActiveModel {
         self.updated_at = Set(Utc::now().naive_utc());
 
         if let Set(name) = &self.name {
-                   if name.trim().is_empty() {
-                       return Err(DbErr::Custom("VALIDATION:name:não pode estar vazio".into()));
-                   }
-               }
+            if name.trim().is_empty() {
+                return Err(DbErr::Custom("VALIDATION:name:não pode estar vazio".into()));
+            }
+        }
 
-               if let Set(email) = &self.email {
-                   let e = email.trim();
-                   if e.is_empty() {
-                       return Err(DbErr::Custom("VALIDATION:email:não pode estar vazio".into()));
-                   }
-                   if !e.contains('@') {
-                       return Err(DbErr::Custom("VALIDATION:email:formato inválido".into()));
-                   }
-               }
+        if let Set(email) = &self.email {
+            let e = email.trim();
+            if e.is_empty() {
+                return Err(DbErr::Custom(
+                    "VALIDATION:email:não pode estar vazio".into(),
+                ));
+            }
+            if !e.contains('@') {
+                return Err(DbErr::Custom("VALIDATION:email:formato inválido".into()));
+            }
+        }
         Ok(self)
     }
 }
@@ -86,7 +86,11 @@ impl CreateUser {
             errors.push("password", "mínimo de 8 caracteres");
         }
 
-        if errors.is_empty() { Ok(()) } else { Err(errors) }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
     }
 }
 

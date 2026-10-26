@@ -1,13 +1,10 @@
-use crypto_glue::{
-    argon2::{
-        self,
-        password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
-    },
+use crypto_glue::argon2::{
+    self,
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString, rand_core::OsRng},
 };
 
 pub fn hash_password(password: &str) -> Result<String, Box<dyn std::error::Error>> {
     let salt = SaltString::generate(&mut OsRng);
-
 
     let argon2 = argon2::Argon2::default();
 

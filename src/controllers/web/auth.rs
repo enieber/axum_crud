@@ -2,13 +2,11 @@ use axum::{
     extract::{Form, State},
     response::{IntoResponse, Redirect, Response},
 };
-use askama::Template;
-use askama_web::WebTemplate;
-use serde::{Deserialize};
+use serde::Deserialize;
 
-use crate::state::AppState;
-use axum_crud::views::form::{FormField, FieldKind};
 use crate::controllers::web::form::FormTemplate;
+use crate::state::AppState;
+use axum_crud::views::form::FormField;
 
 pub async fn register_view() -> FormTemplate {
     FormTemplate {
@@ -16,12 +14,9 @@ pub async fn register_view() -> FormTemplate {
         action: "/auth/register".into(),
         submit_label: "Register".into(),
         fields: vec![
-            FormField::text("name", "Nome", "")
-                .required(),
-            FormField::text("email", "Email", "")
-                .required(),
-            FormField::password("password", "Password", "")
-                .required(),
+            FormField::text("name", "Nome", "").required(),
+            FormField::text("email", "Email", "").required(),
+            FormField::password("password", "Password", "").required(),
         ],
         general_error: None,
     }
@@ -58,7 +53,8 @@ pub async fn register_form(
                     .error("O Password não pode estar vazio."),
             ],
             general_error: None,
-        }.into_response();
+        }
+        .into_response();
     }
 
     if email.is_empty() {
@@ -78,7 +74,8 @@ pub async fn register_form(
                     .error("O Password não pode estar vazio."),
             ],
             general_error: None,
-        }.into_response();
+        }
+        .into_response();
     }
 
     if password.is_empty() {
@@ -98,12 +95,20 @@ pub async fn register_form(
                     .error("O Password não pode estar vazio."),
             ],
             general_error: None,
-        }.into_response();
+        }
+        .into_response();
     }
 
     let url = match state.api_base.join("/api/v1/register") {
         Ok(u) => u,
-        Err(e) => return render_error(format!("URL inválida: {e}"), input.name, input.email, input.password),
+        Err(e) => {
+            return render_error(
+                format!("URL inválida: {e}"),
+                input.name,
+                input.email,
+                input.password,
+            );
+        }
     };
 
     let payload = serde_json::json!({ "name": name, "email": email, "password": password });
@@ -114,9 +119,14 @@ pub async fn register_form(
             format!("API retornou {}", resp.status()),
             input.name,
             input.email,
-            input.password
+            input.password,
         ),
-        Err(e) => render_error(format!("Falha na requisição: {e}"), input.name, input.email, input.password),
+        Err(e) => render_error(
+            format!("Falha na requisição: {e}"),
+            input.name,
+            input.email,
+            input.password,
+        ),
     }
 }
 
@@ -131,5 +141,6 @@ fn render_error(msg: String, name: String, email: String, password: String) -> R
             FormField::password("password", "Password", password).required(),
         ],
         general_error: Some(msg),
-    }.into_response()
+    }
+    .into_response()
 }

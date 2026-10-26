@@ -18,10 +18,7 @@ impl ErrorResponse {
         }
     }
 
-    pub fn validation_fields(
-        message: impl Into<String>,
-        fields: serde_json::Value,
-    ) -> Self {
+    pub fn validation_fields(message: impl Into<String>, fields: serde_json::Value) -> Self {
         Self {
             error: "VALIDATION_ERROR".into(),
             message: message.into(),

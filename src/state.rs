@@ -1,5 +1,5 @@
-use sea_orm::{DatabaseConnection};
 use reqwest::{Client, Url};
+use sea_orm::DatabaseConnection;
 
 #[derive(Clone)]
 pub struct AppState {

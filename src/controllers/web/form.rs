@@ -1,13 +1,7 @@
-use axum::{
-    extract::{Form, State},
-    response::{IntoResponse, Redirect, Response},
-};
 use askama::Template;
 use askama_web::WebTemplate;
-use serde::{Deserialize};
 
-use crate::state::AppState;
-use axum_crud::views::form::{FormField, FieldKind};
+use axum_crud::views::form::{FieldKind, FormField};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "form.html")]
@@ -17,4 +11,16 @@ pub struct FormTemplate {
     pub submit_label: String,
     pub fields: Vec<FormField>,
     pub general_error: Option<String>,
+}
+
+impl FormTemplate {
+    pub fn empty(err: Option<String>) -> Self {
+        Self {
+            title: "Form".to_string(),
+            action: "form".to_string(),
+            submit_label: "save".to_string(),
+            fields: vec![],
+            general_error: err,
+        }
+    }
 }

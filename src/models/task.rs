@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use sea_orm::entity::prelude::*;
-use sea_orm::ActiveValue::Set;
 use chrono::Utc;
+use sea_orm::ActiveValue::Set;
+use sea_orm::entity::prelude::*;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize, ToSchema)]
@@ -33,12 +33,9 @@ impl ActiveModelBehavior for ActiveModel {
 
         Ok(self)
     }
-
-
 }
 
-
-#[derive(Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateTask {
     pub title: String,
 }

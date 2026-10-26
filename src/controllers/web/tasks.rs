@@ -1,17 +1,19 @@
-use axum::{
-    extract::{Form, State, Query, Path},
-    response::{IntoResponse, Redirect, Response},
-};
 use askama::Template;
 use askama_web::WebTemplate;
+use axum::{
+    extract::{Form, Path, Query, State},
+    response::{IntoResponse, Response},
+};
 use serde::Deserialize;
 
 use crate::state::AppState;
-use axum_crud::views::form::{FormField, FieldKind};
+use axum_crud::views::form::FormField;
 
-use crate::models::task::{Model};
-use crate::models::response::{ApiResponse, PaginationParams};
+use crate::client::tasks::TasksClient;
 use crate::controllers::web::form::FormTemplate;
+use crate::controllers::web::helpers::{form_error, redirect_tasks};
+use crate::models::response::PaginationParams;
+use crate::models::task::{CreateTask, Model, UpdateTask};
 
 #[derive(Template, WebTemplate)]
 #[template(path = "tasks.html")]
@@ -23,62 +25,39 @@ pub struct TaskTemplate {
     pub error: Option<String>,
 }
 
-pub async fn list_view(State(state): State<AppState>, Query(params): Query<PaginationParams>) -> TaskTemplate {
+impl TaskTemplate {
+    pub fn empty(page: u64, limit: u64, err: impl ToString) -> Self {
+        Self {
+            tasks: vec![],
+            page,
+            limit,
+            total: 0,
+            error: Some(err.to_string()),
+        }
+    }
+}
+
+pub async fn list_view(
+    State(state): State<AppState>,
+    Query(params): Query<PaginationParams>,
+) -> TaskTemplate {
     let page = params.page;
     let limit = params.limit_clamped();
 
-    let url = match state.api_base.join("/api/v1/tasks") {
-        Ok(u) => u,
-        Err(e) => return TaskTemplate {
-            tasks: vec![],
-            page,
-            limit,
-            total: 0,
-            error: Some(format!("URL inválida: {e}")),
-        },
+    let client = match TasksClient::new(&state) {
+        Ok(c) => c,
+        Err(e) => return TaskTemplate::empty(page, limit, e),
     };
 
-
-    let result = state
-           .http
-           .get(url)
-           .query(&[("page", page), ("limit", limit)])
-           .send()
-           .await;
-
-    match result {
-        Ok(resp) if resp.status().is_success() => {
-            match resp.json::<ApiResponse<Vec<Model>>>().await {
-                Ok(api) => TaskTemplate {
-                    tasks: api.data,
-                    page,
-                    limit,
-                    total: api.meta.unwrap().total,
-                    error: None,
-                },
-                Err(e) => TaskTemplate {
-                    tasks: vec![],
-                    page,
-                    limit,
-                    total: 0,
-                    error: Some(format!("JSON inválido: {e}")),
-                },
-            }
-        }
-        Ok(resp) => TaskTemplate {
-            tasks: vec![],
+    match client.list(page, limit).await {
+        Ok(api) => TaskTemplate {
+            tasks: api.data,
             page,
             limit,
-            total: 0,
-            error: Some(format!("API retornou {}", resp.status())),
+            total: api.meta.map(|m| m.total).unwrap_or(0),
+            error: None,
         },
-        Err(e) => TaskTemplate {
-            tasks: vec![],
-            page,
-            limit,
-            total: 0,
-            error: Some(format!("Falha na requisição: {e}")),
-        },
+        Err(e) => TaskTemplate::empty(page, limit, e),
     }
 }
 
@@ -96,7 +75,6 @@ pub async fn create_view() -> FormTemplate {
     }
 }
 
-
 #[derive(Deserialize)]
 pub struct TaskFormInput {
     pub title: String,
@@ -105,56 +83,37 @@ pub struct TaskFormInput {
 pub async fn register_form(
     State(state): State<AppState>,
     Form(input): Form<TaskFormInput>,
-) -> impl IntoResponse {
+) -> Response {
     let title = input.title.trim().to_string();
-    if title.is_empty() {
-        return FormTemplate {
-            title: "Nova tarefa".into(),
-            action: "/tasks".into(),
-            submit_label: "Criar".into(),
-            fields: vec![
-                FormField::text("title", "Título", input.title)
-                    .required()
-                    .error("O título não pode estar vazio."),
-            ],
-            general_error: None,
-        }.into_response();
-    }
-
-    let url = match state.api_base.join("/api/v1/tasks") {
-        Ok(u) => u,
-        Err(e) => return render_error(format!("URL inválida: {e}"), input.title),
-    };
-
-    let payload = serde_json::json!({ "title": title });
-
-    match state.http.post(url).json(&payload).send().await {
-        Ok(resp) if resp.status().is_success() => Redirect::to("/tasks").into_response(),
-        Ok(resp) => render_error(
-            format!("API retornou {}", resp.status()),
-            input.title,
-        ),
-        Err(e) => render_error(format!("Falha na requisição: {e}"), input.title),
-    }
-}
-
-fn render_error(msg: String, title: String) -> axum::response::Response {
-    FormTemplate {
+    let form = FormTemplate {
         title: "Nova tarefa".into(),
         action: "/tasks".into(),
         submit_label: "Criar".into(),
-        fields: vec![
-            FormField::text("title", "Título", title).required(),
-        ],
-        general_error: Some(msg),
-    }.into_response()
+        fields: vec![FormField::text("title", "Título", input.title.clone()).required()],
+        general_error: None,
+    };
+
+    if title.is_empty() {
+        return form_error(form, "O título não pode estar vazio.");
+    }
+
+    let client = match TasksClient::new(&state) {
+        Ok(c) => c,
+        Err(e) => return form_error(form, e),
+    };
+
+    let payload = CreateTask { title };
+    match client.create(&payload).await {
+        Ok(_) => redirect_tasks(),
+        Err(e) => form_error(form, e),
+    }
 }
 
 #[derive(Deserialize)]
 pub struct UpdateTaskFormInput {
     pub title: String,
     #[serde(default)]
-    pub done: Option<String>, // checkbox ausente = None
+    pub done: Option<String>,
 }
 
 pub async fn update_form(
@@ -165,62 +124,45 @@ pub async fn update_form(
     let title = input.title.trim().to_string();
     let done = input.done.as_deref() == Some("true");
 
-    if title.is_empty() {
-        return edit_error(id, "O título não pode estar vazio.", input.title, done);
-    }
-
-    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
-        Ok(u) => u,
-        Err(e) => return edit_error(id, &format!("URL inválida: {e}"), input.title, done),
-    };
-
-    let payload = serde_json::json!({
-        "title": title,
-        "done": done,
-    });
-
-    match state.http.put(url).json(&payload).send().await {
-        Ok(resp) if resp.status().is_success() => Redirect::to("/tasks").into_response(),
-        Ok(resp) => edit_error(id, &format!("API retornou {}", resp.status()), input.title, done),
-        Err(e) => edit_error(id, &format!("Falha na requisição: {e}"), input.title, done),
-    }
-}
-
-fn edit_error(id: i32, msg: &str, title: String, done: bool) -> Response {
-    FormTemplate {
+    let form = FormTemplate {
         title: "Editar tarefa".into(),
-        action: format!("/tasks/{id}"),
-        submit_label: "Salvar".into(),
-        fields: vec![
-            FormField::text("title", "Título", title).required(),
-            FormField::checkbox("done", "Concluída", done),
-        ],
-        general_error: Some(msg.into()),
-    }.into_response()
-}
-
-
-pub async fn update_view(
-    State(state): State<AppState>,
-    Path(id): Path<i32>,
-) -> FormTemplate {
-    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
-        Ok(u) => u,
-        Err(e) => return error_form(format!("URL inválida: {e}")),
+        action: "/tasks".into(),
+        submit_label: "Savlar".into(),
+        fields: vec![FormField::text("title", "Título", title.clone()).required()],
+        general_error: None,
     };
 
-    let task = match state.http.get(url).send().await {
-        Ok(resp) if resp.status().is_success() => {
-            match resp
-                .json::<crate::models::response::ApiResponse<crate::models::task::Model>>()
-                .await
-            {
-                Ok(api) => api.data,
-                Err(e) => return error_form(format!("JSON inválido: {e}")),
-            }
+    if title.is_empty() {
+        return form_error(form, "O título não pode estar vazio.");
+    }
+
+    let client = match TasksClient::new(&state) {
+        Ok(c) => c,
+        Err(e) => return form_error(form, e),
+    };
+
+    let payload = UpdateTask {
+        title: Some(title),
+        done: Some(done),
+    };
+    match client.update(id, &payload).await {
+        Ok(_) => redirect_tasks(),
+        Err(e) => form_error(form, e),
+    }
+}
+
+pub async fn update_view(State(state): State<AppState>, Path(id): Path<i32>) -> Response {
+    let client = match TasksClient::new(&state) {
+        Ok(c) => c,
+        Err(err) => return FormTemplate::empty(Some(err.to_string())).into_response(),
+    };
+
+    let task = match client.find(id).await {
+        Ok(api) => {
+            tracing::info!("get id: {:?}", api);
+            api.data
         }
-        Ok(resp) => return error_form(format!("API retornou {}", resp.status())),
-        Err(e) => return error_form(format!("Falha na requisição: {e}")),
+        Err(err) => return FormTemplate::empty(Some(err.to_string())).into_response(),
     };
 
     FormTemplate {
@@ -233,39 +175,25 @@ pub async fn update_view(
         ],
         general_error: None,
     }
+    .into_response()
 }
 
-fn error_form(msg: String) -> FormTemplate {
-    FormTemplate {
+pub async fn delete_form(State(state): State<AppState>, Path(id): Path<i32>) -> impl IntoResponse {
+    let form = FormTemplate {
         title: "Editar tarefa".into(),
-        action: "#".into(),
-        submit_label: "Salvar".into(),
-        fields: vec![],
-        general_error: Some(msg),
-    }
-}
-
-pub async fn delete_form(
-    State(state): State<AppState>,
-    Path(id): Path<i32>,
-) -> Redirect {
-    let url = match state.api_base.join(&format!("/api/v1/tasks/{id}")) {
-        Ok(u) => u,
-        Err(e) => {
-            tracing::error!("URL inválida ao deletar task {id}: {e}");
-            return Redirect::to("/tasks");
-        }
+        action: format!("/tasks/{id}/delete"),
+        submit_label: "Savlar".into(),
+        fields: vec![FormField::text("title", "Título", "").required()],
+        general_error: None,
     };
 
-    match state.http.delete(url).send().await {
-        Ok(resp) if resp.status().is_success() => Redirect::to("/tasks"),
-        Ok(resp) => {
-            tracing::warn!("API retornou {} ao deletar task {id}", resp.status());
-            Redirect::to("/tasks")
-        }
-        Err(e) => {
-            tracing::error!("Falha ao deletar task {id}: {e}");
-            Redirect::to("/tasks")
-        }
+    let client = match TasksClient::new(&state) {
+        Ok(c) => c,
+        Err(e) => return form_error(form, e),
+    };
+
+    match client.delete(id).await {
+        Ok(_) => redirect_tasks(),
+        Err(e) => form_error(form, e),
     }
 }

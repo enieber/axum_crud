@@ -1,6 +1,9 @@
-use axum::{routing::{get, post}, Router};
+use crate::controllers::web::{auth, tasks};
 use crate::state::AppState;
-use crate::controllers::web::{tasks, auth};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 
 pub fn web_routes() -> Router<AppState> {
     let tasks_routes = Router::new()
@@ -10,11 +13,10 @@ pub fn web_routes() -> Router<AppState> {
         .route("/{id}", post(tasks::update_form))
         .route("/{id}/delete", post(tasks::delete_form));
 
-    let auth_routes = Router::new()
-        .route(
-            "/register",
-            get(auth::register_view).post(auth::register_form),
-        );
+    let auth_routes = Router::new().route(
+        "/register",
+        get(auth::register_view).post(auth::register_form),
+    );
 
     Router::new()
         .nest("/tasks", tasks_routes)

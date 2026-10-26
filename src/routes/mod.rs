@@ -1,18 +1,15 @@
-// pub mod api;
-pub mod web;
 pub mod security_addons;
+pub mod web;
 
 use axum::Router;
-use utoipa::{
-    Modify,
-};
+use utoipa::Modify;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::state::AppState;
-use crate::controllers::api::{tasks, auth};
-use crate::routes::web::web_routes;
+use crate::controllers::api::{auth, tasks};
 use crate::routes::security_addons::SecurityAddon;
+use crate::routes::web::web_routes;
+use crate::state::AppState;
 
 pub fn app(state: AppState) -> Router {
     let (router, mut api) = OpenApiRouter::new()
@@ -23,11 +20,9 @@ pub fn app(state: AppState) -> Router {
 
     SecurityAddon.modify(&mut api);
 
-     let web = web_routes().with_state(state);
+    let web = web_routes().with_state(state);
 
     router
         .merge(web)
-        .merge(
-            SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api),
-        )
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", api))
 }

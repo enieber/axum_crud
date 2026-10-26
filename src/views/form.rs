@@ -49,7 +49,11 @@ impl FormField {
         Self {
             name: name.into(),
             label: label.into(),
-            value: if checked { "true".into() } else { String::new() },
+            value: if checked {
+                "true".into()
+            } else {
+                String::new()
+            },
             kind: FieldKind::Checkbox,
             required: false,
             placeholder: None,
@@ -57,7 +61,16 @@ impl FormField {
         }
     }
 
-    pub fn required(mut self) -> Self { self.required = true; self }
-    pub fn placeholder(mut self, p: &str) -> Self { self.placeholder = Some(p.into()); self }
-    pub fn error(mut self, e: &str) -> Self { self.error = Some(e.into()); self }
+    pub fn required(mut self) -> Self {
+        self.required = true;
+        self
+    }
+    pub fn placeholder(mut self, p: &str) -> Self {
+        self.placeholder = Some(p.into());
+        self
+    }
+    pub fn error(mut self, e: &str) -> Self {
+        self.error = Some(e.into());
+        self
+    }
 }

@@ -1,19 +1,19 @@
-use tokio::net::TcpListener;
-use std::env;
-use migration::{Migrator, MigratorTrait};
-use sea_orm::{Database};
-use tracing_subscriber::EnvFilter;
-use tower_http::trace::TraceLayer;
 use dotenvy::dotenv;
+use migration::{Migrator, MigratorTrait};
 use reqwest::Url;
+use sea_orm::Database;
+use std::env;
+use tokio::net::TcpListener;
 use tower_http::services::ServeDir;
+use tower_http::trace::TraceLayer;
+use tracing_subscriber::EnvFilter;
 
+mod client;
+mod controllers;
 mod models;
 mod routes;
-mod controllers;
-mod state;
-mod client;
 mod services;
+mod state;
 
 use crate::client::config::Config;
 use crate::client::http::build_client;
@@ -29,9 +29,7 @@ async fn main() {
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("error,tower_http=info"));
 
-    tracing_subscriber::fmt()
-        .with_env_filter(env_filter)
-        .init();
+    tracing_subscriber::fmt().with_env_filter(env_filter).init();
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
     let mut api_base = Url::parse("http://127.0.0.1:3000").unwrap();
@@ -53,10 +51,11 @@ async fn main() {
         api_base,
     };
 
-    let app = routes::app(state).nest_service("/static", ServeDir::new("static")).layer(TraceLayer::new_for_http());
+    let app = routes::app(state)
+        .nest_service("/static", ServeDir::new("static"))
+        .layer(TraceLayer::new_for_http());
 
-    let listener = TcpListener::bind
-        ("0.0.0.0:3000").await.unwrap();
+    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     tracing::info!("listening on {}", listener.local_addr().unwrap());
 
     println!("Server running on http://localhost:3000");
