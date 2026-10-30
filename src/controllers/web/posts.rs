@@ -35,7 +35,7 @@ impl WebConfig for PostConfig {
                 FormField::text("title", "Título", model.title.clone()),
                 FormField::textarea("description", "Descrição", model.description.clone()),
                 FormField::text("slug", "Slug", model.slug.clone()),
-                FormField::text("body", "Conteudo", model.body.clone()),
+                FormField::textarea("body", "Conteudo", model.body.clone()),
             ])
             .with_actions(vec![
                 ListAction::edit(&model.id.to_string(), Self::ROUTE_BASE),
@@ -54,7 +54,7 @@ impl WebConfig for PostConfig {
             FormField::text("slug", "Slug", "")
                 .required()
                 .placeholder("Slug do post"),
-            FormField::text("body", "Conteudo", "")
+            FormField::textarea("body", "Conteudo", "")
                 .required()
                 .placeholder("Digite o conteudo do post"),
         ]
@@ -65,7 +65,7 @@ impl WebConfig for PostConfig {
             FormField::text("title", "Título", model.title.clone()).required(),
             FormField::textarea("description", "Descrição", model.description.clone()).required(),
             FormField::text("slug", "Slug", model.slug.clone()).required(),
-            FormField::text("body", "Conteudo", model.body.clone()).required(),
+            FormField::textarea("body", "Conteudo", model.body.clone()).required(),
         ]
     }
 
