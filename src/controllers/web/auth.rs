@@ -12,6 +12,7 @@ pub async fn register_view() -> FormTemplate {
     FormTemplate {
         title: "Register".into(),
         action: "/auth/register".into(),
+        base_action: "/auth/login".into(),
         submit_label: "Register".into(),
         fields: vec![
             FormField::text("name", "Nome", "").required(),
@@ -40,6 +41,7 @@ pub async fn register_form(
         return FormTemplate {
             title: "Register".into(),
             action: "/auth/register".into(),
+            base_action: "/auth/login".into(),
             submit_label: "Register".into(),
             fields: vec![
                 FormField::text("name", "Nome", input.name)
@@ -61,6 +63,7 @@ pub async fn register_form(
         return FormTemplate {
             title: "Register".into(),
             action: "/auth/register".into(),
+            base_action: "/auth/login".into(),
             submit_label: "Register".into(),
             fields: vec![
                 FormField::text("name", "Nome", input.name)
@@ -82,6 +85,7 @@ pub async fn register_form(
         return FormTemplate {
             title: "Register".into(),
             action: "/auth/register".into(),
+            base_action: "/auth/login".into(),
             submit_label: "Register".into(),
             fields: vec![
                 FormField::text("name", "Nome", input.name)
@@ -134,6 +138,7 @@ fn render_error(msg: String, name: String, email: String, password: String) -> R
     FormTemplate {
         title: "Register".into(),
         action: "/auth/register".into(),
+        base_action: "/auth/login".into(),
         submit_label: "Register".into(),
         fields: vec![
             FormField::text("name", "Nome", name).required(),

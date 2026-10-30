@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %} {{ title }} {% endblock %}
+
+{% block content %}
+<h1>{{title}}</h1>
+
+  {% if let Some(err) = error %}
+    <p class="error">{{ err }}</p>
+  {% endif %}
+
+  <p class="meta">
+    Total: {{ total }} — página {{ page }} ({{ limit }} por página)
+  </p>
+
+  <a href="/{{page_name}}/new" class="button">
+    Create
+  </a>
+  {% if list.is_empty() %}
+    <p>Nenhuma tarefa encontrada.</p>
+  {% else %}
+  <ul class="sw-container-list">
+    {% for item in list %}
+      <li class="sw-item-list">
+        <div class="item-content">
+          {% for field in item.fields %}
+            {% match field.kind %}
+              {% when FieldKind::Text %}
+                <span class="field-text">
+                  <strong>{{ field.label }}:</strong> {{ field.value }}
+                </span>
+
+              {% when FieldKind::Checkbox %}
+                <input type="checkbox" id="{{ field.name }}-{{item.id}}"
+                       {% if field.value == "true" %}checked{% endif %} disabled />
+                <label for="{{ field.name }}-{{item.id}}">{{ field.label }}</label>
+
+              {% when FieldKind::Badge %}
+                <span class="badge">{{ field.value }}</span>
+
+              {% when FieldKind::Image %}
+                {% if let Some(url) = field.url %}
+                  <img src="{{ url }}" alt="{{ field.label }}" class="avatar" />
+                {% endif %}
+
+              {% when FieldKind::Link %}
+                {% if let Some(url) = field.url %}
+                  <a href="{{ url }}">{{ field.value }}</a>
+                {% endif %}
+
+              {% when FieldKind::Date %}
+                <time>{{ field.value }}</time>
+
+              {% when FieldKind::Password %}
+                <span>••••••</span>
+
+              {% when FieldKind::Textarea %}
+                <p>{{ field.value }}</p>
+
+              {% when FieldKind::Number %}
+                <span>{{ field.value }}</span>
+            {% endmatch %}
+          {% endfor %}
+        </div>
+
+        <div class="item-actions">
+          {% for action in item.actions %}
+            {% if action.method == "get" %}
+              <a href="{{ action.url }}" class="button{% if action.is_danger %} danger{% endif %}">
+                {{ action.label }}
+              </a>
+            {% else %}
+              <form method="post" action="{{ action.url }}" style="display:inline"
+                    onsubmit="return confirm('Confirmar?');">
+                <button type="submit" class="button{% if action.is_danger %} danger{% endif %}">
+                  {{ action.label }}
+                </button>
+              </form>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <nav class="sw-pagination">
+    {% if page > 1 %}
+      <a href="?page={{ page - 1 }}&limit={{ limit }}">← Anterior</a>
+    {% else %}
+      <a href="#" aria-disabled="true">← Anterior</a>
+    {% endif %}
+
+    <span>Página {{ page }}</span>
+
+    {% if (page * limit) < total %}
+      <a href="?page={{ page + 1 }}&limit={{ limit }}">Próxima →</a>
+    {% else %}
+      <a href="#" aria-disabled="true">Próxima →</a>
+    {% endif %}
+    <form method="get" action="/tasks">
+        <input type="hidden" name="page" value="{{ page }}">
+        <label for="limit">Itens por página:</label>
+        <select id="limit" name="limit" onchange="this.form.submit()">
+            {% for n in [5, 10, 20, 50] %}
+            <option value="{{ n }}" {% if *n == limit %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+        </select>
+    </form>
+  </nav>
+{% endblock %}

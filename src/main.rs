@@ -10,6 +10,7 @@ use tracing_subscriber::EnvFilter;
 
 mod client;
 mod controllers;
+mod macros;
 mod models;
 mod routes;
 mod services;

@@ -1,3 +1,4 @@
+pub mod posts;
 pub mod security_addons;
 pub mod web;
 
@@ -7,6 +8,7 @@ use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::controllers::api::{auth, tasks};
+
 use crate::routes::security_addons::SecurityAddon;
 use crate::routes::web::web_routes;
 use crate::state::AppState;
@@ -15,6 +17,7 @@ pub fn app(state: AppState) -> Router {
     let (router, mut api) = OpenApiRouter::new()
         .nest("/api/v1", tasks::routes())
         .nest("/api/v1", auth::routes())
+        .nest("/api/v1", posts::routes())
         .with_state(state.clone())
         .split_for_parts();
 

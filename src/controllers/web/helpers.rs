@@ -12,3 +12,7 @@ pub fn form_error(form: FormTemplate, msg: impl ToString) -> Response {
 pub fn redirect_tasks() -> Response {
     Redirect::to("/tasks").into_response()
 }
+
+pub fn redirect_posts() -> Response {
+    Redirect::to("/posts").into_response()
+}
